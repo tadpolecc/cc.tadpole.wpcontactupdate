@@ -110,14 +110,10 @@ function wpcontactupdate_civicrm_alterSettingsFolders( &$metaDataFolders = NULL 
 function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 
 	$names = array( "CRM_Profile_Form_Edit" );
-	//$gid = $form->getVar('_gid');
-	//if ($gid == 31) {
 
 	if ( ! in_array( $formName, $names ) ) {
 		$users = get_users();
 
-		//require_once( 'civi.php' );
-		//civicrm_wp_initialize();
 		require_once 'CRM/Core/BAO/UFMatch.php';
 
 		$uid  = $user->ID;
@@ -126,7 +122,7 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 		if ( empty( $cuid ) ) {
 			return;
 		}
-		//TODO:  Check for uf_match before proceeding
+
 		$tc_uf_check = civicrm_api3( 'UFMatch', 'get', array(
 			'sequential' => 1,
 			'return'     => "uf_id",
@@ -189,7 +185,6 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 			}
 		}
 
-
 		$tc_upload_dir      = wp_upload_dir();
 		$tc_profile_dirname = $tc_upload_dir['basedir'] . '/' . 'profile-images';
 		if ( ! file_exists( $tc_profile_dirname ) ) {
@@ -235,4 +230,3 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 		}
 	}
 }
-
