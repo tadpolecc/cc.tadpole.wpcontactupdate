@@ -110,10 +110,12 @@ function wpcontactupdate_civicrm_alterSettingsFolders( &$metaDataFolders = NULL 
 function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 
 	$names = array( "CRM_Profile_Form_Edit" );
+	//$gid = $form->getVar('_gid');
+	//if ($gid == 1) {
 
-	if ( ! in_array( $formName, $names ) ) {
+	if (in_array( $formName, $names ) ) {
 		$users = get_users();
-
+		
 		require_once 'CRM/Core/BAO/UFMatch.php';
 
 		$uid  = $user->ID;
@@ -141,12 +143,24 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 		$sql     = "SELECT * FROM civicrm_uf_match WHERE uf_id =$cuid";
 		$contact = CRM_Core_DAO::executeQuery( $sql );
 
+	//TODO: Get Custom field by Name.   Consider  to create field
+
+    $image_id = civicrm_api3('CustomField', 'get', array(
+      'return' => "id",
+      'name' => "Profile_Image",
+    ));
+    if (!empty($image_id['values'])) {
+      foreach ($image_id['values'] as $key => $value) {
+        $conimageid = $value['id'];
+      }
+    }
+    $conprofimage = 'custom_' . $conimageid;
 
 		if ( $contact->fetch() ) {
 			$cid        = $contact->contact_id;
 			$conDetails = civicrm_api3( 'Contact', 'get', array(
 				'sequential'   => 1,
-				'return'       => "id,display_name,first_name,middle_name,last_name,custom_9",
+				'return'       => "id,display_name,first_name,middle_name,last_name,$conprofimage",
 				'contact_type' => "Individual",
 				'contact_id'   => $cid
 			) );
@@ -157,7 +171,7 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 					$confirstname = $value['first_name'];
 					$conmidname   = $value['middle_name'];
 					$conlastname  = $value['last_name'];
-					$conimage     = $value['custom_9'];
+					$conimage     = $value['$conprofimage'];
 				}
 			}
 
@@ -184,7 +198,7 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 				$tcimageurl = $value['customFileUploadDir'];
 			}
 		}
-
+		
 		$tc_upload_dir      = wp_upload_dir();
 		$tc_profile_dirname = $tc_upload_dir['basedir'] . '/' . 'profile-images';
 		if ( ! file_exists( $tc_profile_dirname ) ) {
@@ -211,21 +225,24 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 
 		if ( is_wp_error( $tc_user_up ) ) {
 			//echo "There was an error, probably that user doesn't exist";
-		} else {
+		} 
+		else {
 			//echo "Success!";
 		}
 
 		$tc_user_meta_civiup = update_user_meta( $cuid, 'tc_user_civi_image', $tc_buildurl );
 		if ( is_wp_error( $tc_user_meta_civiup ) ) {
 			//echo "There was an error, probably that user doesn't exist";
-		} else {
+		} 
+		else {
 			//echo "Success!";
 		}
 
 		$tc_user_meta_wpup = update_user_meta( $cuid, 'tc_user_wp_image', $tc_wp_buildurl );
 		if ( is_wp_error( $tc_user_meta_wpup ) ) {
 			//echo "There was an error, probably that user doesn't exist";
-		} else {
+		} 
+		else {
 			//echo "Success!";
 		}
 	}
