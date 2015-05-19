@@ -247,3 +247,139 @@ function wpcontactupdate_civicrm_postProcess( $formName, &$form ) {
 		}
 	}
 }
+	function wpcontactupdate_civicrm_post( $op, $objectName, $objectId, $objectRef ) {
+		if ($op = 'edit'  && $objectName == 'Individual') {
+			$users = get_users();
+		
+		require_once 'CRM/Core/BAO/UFMatch.php';
+
+		$uid  = $user->ID;
+		$cuid = get_current_user_id();
+
+		if ( empty( $cuid ) ) {
+			return;
+		}
+
+		$tc_uf_check = civicrm_api3( 'UFMatch', 'get', array(
+			'sequential' => 1,
+			'return'     => "uf_id",
+			'uf_id'      => $cuid,
+		) );
+
+		if ( ! empty ( $tc_uf_check['values'] ) ) {
+			foreach ( $tc_uf_check['values'] as $key => $value ) {
+				$tc_uf_valid = $value['uf_id'];
+			}
+		}
+
+		if ( empty ( $tc_uf_valid ) ) {
+			return;
+		}
+		$sql     = "SELECT * FROM civicrm_uf_match WHERE uf_id =$cuid";
+		$contact = CRM_Core_DAO::executeQuery( $sql );
+
+	//TODO: Get Custom field by Name.   Consider  to create field
+
+    $image_id = civicrm_api3('CustomField', 'get', array(
+      'return' => "id",
+      'name' => "Profile_Image",
+    ));
+    if (!empty($image_id['values'])) {
+      foreach ($image_id['values'] as $key => $value) {
+        $conimageid = $value['id'];
+      }
+    }
+    $conprofimage = 'custom_' . $conimageid;
+
+		if ( $contact->fetch() ) {
+			$cid        = $contact->contact_id;
+			$conDetails = civicrm_api3( 'Contact', 'get', array(
+				'sequential'   => 1,
+				'return'       => "id,display_name,first_name,middle_name,last_name,$conprofimage",
+				'contact_type' => "Individual",
+				'contact_id'   => $cid
+			) );
+			if ( ! empty( $conDetails['values'] ) ) {
+				foreach ( $conDetails['values'] as $key => $value ) {
+					$conid        = $value['id'];
+					$condisname   = $value['display_name'];
+					$confirstname = $value['first_name'];
+					$conmidname   = $value['middle_name'];
+					$conlastname  = $value['last_name'];
+					$conimage     = $value['$conprofimage'];
+				}
+			}
+
+		}
+
+		$tc_file = $result = civicrm_api3( 'File', 'get', array(
+			'sequential' => 1,
+			'return'     => "id,uri",
+			'id'         => $conimage,
+		) );
+		if ( ! empty( $tc_file['values'] ) ) {
+			foreach ( $tc_file['values'] as $key => $value ) {
+				$tcid  = $value['id'];
+				$tcuri = $value['uri'];
+			}
+		}
+
+		$tc_imagedir = $result = civicrm_api3( 'Setting', 'get', array(
+			'sequential' => 1,
+			'return'     => "customFileUploadDir",
+		) );
+		if ( ! empty( $tc_imagedir['values'] ) ) {
+			foreach ( $tc_imagedir['values'] as $key => $value ) {
+				$tcimageurl = $value['customFileUploadDir'];
+			}
+		}
+		
+		$tc_upload_dir      = wp_upload_dir();
+		$tc_profile_dirname = $tc_upload_dir['basedir'] . '/' . 'profile-images';
+		if ( ! file_exists( $tc_profile_dirname ) ) {
+			wp_mkdir_p( $tc_profile_dirname );
+		}
+
+		$tc_baseurl            = get_bloginfo( 'url' ) . '/';
+		$tc_basedir            = plugin_dir_url() . 'files/civicrm/custom/';
+		$tc_wp_civi_profiledir = $tc_upload_dir['baseurl'] . '/' . 'profile-images/';
+		$tc_buildurl           = $tc_basedir . $tcuri;
+		$tc_wp_buildurl        = $tc_wp_civi_profiledir . $tcuri;
+		$tc_civi_pimage        = $tcimageurl . $tcuri;
+		$tc_wp_pimagedir       = $tc_profile_dirname . '/';
+		$tc_wp_pimageurl       = $tc_wp_pimagedir . $tcuri;
+		copy( $tc_civi_pimage, $tc_wp_pimageurl );
+
+
+		$tc_user_up = wp_update_user( array(
+			'ID'         => $cuid,
+			'nickname'   => $condisname,
+			'first_name' => $confirstname,
+			'last_name'  => $conlastname
+		) );
+
+		if ( is_wp_error( $tc_user_up ) ) {
+			//echo "There was an error, probably that user doesn't exist";
+		} 
+		else {
+			//echo "Success!";
+		}
+
+		$tc_user_meta_civiup = update_user_meta( $cuid, 'tc_user_civi_image', $tc_buildurl );
+		if ( is_wp_error( $tc_user_meta_civiup ) ) {
+			//echo "There was an error, probably that user doesn't exist";
+		} 
+		else {
+			//echo "Success!";
+		}
+
+		$tc_user_meta_wpup = update_user_meta( $cuid, 'tc_user_wp_image', $tc_wp_buildurl );
+		if ( is_wp_error( $tc_user_meta_wpup ) ) {
+			//echo "There was an error, probably that user doesn't exist";
+		} 
+		else {
+			//echo "Success!";
+		}
+	}
+
+		}
