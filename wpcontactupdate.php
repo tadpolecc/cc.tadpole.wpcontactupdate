@@ -233,7 +233,7 @@ function wpcontactupdate_tc_contactupdate() {
   }
 
   $tc_baseurl            = get_bloginfo( 'url' ) . '/';
-  $tc_basedir            = plugin_dir_url() . 'files/civicrm/custom/';
+  $tc_basedir            = plugin_dir_url('') . 'files/civicrm/custom/';
   $tc_wp_civi_profiledir = $tc_upload_dir['baseurl'] . '/' . 'profile-images/';
   $tc_buildurl           = $tc_basedir . $tcuri;
   $tc_wp_buildurl        = $tc_wp_civi_profiledir . $tcuri;
