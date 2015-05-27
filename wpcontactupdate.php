@@ -150,22 +150,10 @@ function wpcontactupdate_tc_contactupdate() {
   $sql     = "SELECT * FROM civicrm_uf_match WHERE uf_id =$cuid";
   $contact = CRM_Core_DAO::executeQuery( $sql );
 
-  $image_id = civicrm_api3('CustomField', 'get', array(
-    'return' => "id",
-    'name' => "NWU_Profile_Image",
-    'custom_group_id' => "Membership_History",
-  ));
-  if (!empty($image_id['values'])) {
-    foreach ($image_id['values'] as $key => $value) {
-      $conimageid = $value['id'];
-    }
-  }
-  $conprofimage = 'custom_' . $conimageid;
-
   if ( $contact->fetch() ) {
     $cid        = $contact->contact_id;
     $conDetails = civicrm_api3( 'Contact', 'get', array(
-      'return'       => "id,display_name,first_name,middle_name,last_name,$conprofimage,image_URL",
+      'return'       => "id,display_name,first_name,middle_name,last_name,image_URL",
       'contact_type' => "Individual",
       'contact_id'   => $cid
     ) );
@@ -176,7 +164,6 @@ function wpcontactupdate_tc_contactupdate() {
         $confirstname = $value['first_name'];
         $conmidname   = $value['middle_name'];
         $conlastname  = $value['last_name'];
-        $conimage     = $value['$conprofimage'];
         $conrawimage  = $value['image_URL'];
       }
     }
@@ -206,43 +193,6 @@ function wpcontactupdate_tc_contactupdate() {
     }
   }
 
-  $tc_file = civicrm_api3( 'File', 'get', array(
-    'return'     => "id,uri",
-    'id'         => $conimage,
-  ) );
-  if ( ! empty( $tc_file['values'] ) ) {
-    foreach ( $tc_file['values'] as $key => $value ) {
-      $tcid  = $value['id'];
-      $tcuri = $value['uri'];
-    }
-  }
-
-  $tc_imagedir = civicrm_api3( 'Setting', 'get', array(
-    'return'     => "customFileUploadDir",
-  ) );
-  if ( ! empty( $tc_imagedir['values'] ) ) {
-    foreach ( $tc_imagedir['values'] as $key => $value ) {
-      $tcimageurl = $value['customFileUploadDir'];
-    }
-  }
-
-  $tc_upload_dir      = wp_upload_dir();
-  $tc_profile_dirname = $tc_upload_dir['basedir'] . '/' . 'profile-images';
-  if ( ! file_exists( $tc_profile_dirname ) ) {
-    wp_mkdir_p( $tc_profile_dirname );
-  }
-
-  $tc_baseurl            = get_bloginfo( 'url' ) . '/';
-  $tc_basedir            = plugin_dir_url('') . 'files/civicrm/custom/';
-  $tc_wp_civi_profiledir = $tc_upload_dir['baseurl'] . '/' . 'profile-images/';
-  $tc_buildurl           = $tc_basedir . $tcuri;
-  $tc_wp_buildurl        = $tc_wp_civi_profiledir . $tcuri;
-  $tc_civi_pimage        = $tcimageurl . $tcuri;
-  $tc_wp_pimagedir       = $tc_profile_dirname . '/';
-  $tc_wp_pimageurl       = $tc_wp_pimagedir . $tcuri;
-  copy( $tc_civi_pimage, $tc_wp_pimageurl );
-
-
   $tc_user_up = wp_update_user( array(
     'ID'         => $cuid,
     'nickname'   => $condisname,
@@ -260,24 +210,8 @@ function wpcontactupdate_tc_contactupdate() {
     //echo "Success!";
   }
 
-  $tc_user_meta_civiup = update_user_meta( $cuid, 'tc_user_civi_image', $tc_buildurl );
-  if ( is_wp_error( $tc_user_meta_civiup ) ) {
-    //echo "There was an error, probably that user doesn't exist";
-  }
-  else {
-    //echo "Success!";
-  }
-
   $tc_user_meta_civiup_di = update_user_meta( $cuid, 'tc_user_civi_default_image', $tc_cleandefaultimage );
   if ( is_wp_error( $tc_user_meta_civiup_di ) ) {
-    //echo "There was an error, probably that user doesn't exist";
-  }
-  else {
-    //echo "Success!";
-  }
-
-  $tc_user_meta_wpup = update_user_meta( $cuid, 'tc_user_wp_image', $tc_wp_buildurl );
-  if ( is_wp_error( $tc_user_meta_wpup ) ) {
     //echo "There was an error, probably that user doesn't exist";
   }
   else {
