@@ -193,13 +193,22 @@ function wpcontactupdate_tc_contactupdate() {
     }
   }
 
+  $tc_snickname   = esc_textarea($condisname);
+  $tc_sfirst_name = esc_textarea($confirstname);
+  $tc_slast_name  = esc_textarea($conlastname);
+  $tc_suser_email = sanitize_email($tcpemail);
+  $tc_suser_url   = esc_url($tc_website);
+  $tc_scleandefaultimage = esc_url($tc_cleandefaultimage);
+
+
+
   $tc_user_up = wp_update_user( array(
     'ID'         => $cuid,
-    'nickname'   => $condisname,
-    'first_name' => $confirstname,
-    'last_name'  => $conlastname,
-    'user_email' => $tcpemail,
-    'user_url'   => $tc_website
+    'nickname'   => $tc_snickname,
+    'first_name' => $tc_sfirst_name,
+    'last_name'  => $tc_slast_name,
+    'user_email' => $tc_suser_email,
+    'user_url'   => $tc_suser_url
 
   ) );
 
@@ -210,7 +219,7 @@ function wpcontactupdate_tc_contactupdate() {
     //echo "Success!";
   }
 
-  $tc_user_meta_civiup_di = update_user_meta( $cuid, 'tc_user_civi_default_image', $tc_cleandefaultimage );
+  $tc_user_meta_civiup_di = update_user_meta( $cuid, 'tc_user_civi_default_image', $tc_scleandefaultimage );
   if ( is_wp_error( $tc_user_meta_civiup_di ) ) {
     //echo "There was an error, probably that user doesn't exist";
   }
